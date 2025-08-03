@@ -18,6 +18,17 @@ penguins %>%
   labs(x = "Flipper Length",
        y = "Mass in Grams",
        title = "Body Mass vs. Flipper Length")
-```
 
+
+```
+## Check starwars
+
+```{r}
+starwars %>% 
+  slice_sample(n = 10) %>% 
+  select(name, birth_year, sex, homeworld)
+
+starwars %>% ggplot(aes(x = homeworld)) + 
+  geom_bar()
+```
 

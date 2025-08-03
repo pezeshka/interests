@@ -1,0 +1,30 @@
+[
+  {
+    "objectID": "test.html",
+    "href": "test.html",
+    "title": "Analysis of Penguin Data",
+    "section": "",
+    "text": "library(tidyverse)\n\n── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──\n✔ dplyr     1.1.4     ✔ readr     2.1.5\n✔ forcats   1.0.0     ✔ stringr   1.5.1\n✔ ggplot2   3.5.2     ✔ tibble    3.3.0\n✔ lubridate 1.9.4     ✔ tidyr     1.3.1\n✔ purrr     1.1.0     \n── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n✖ dplyr::filter() masks stats::filter()\n✖ dplyr::lag()    masks stats::lag()\nℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors\nPlot of relationship between flipper length and body mass\npenguins %&gt;% \n  ggplot(aes(x = flipper_len, y = body_mass, color = species)) + \n  geom_point() + \n  theme_minimal() + \n  labs(x = \"Flipper Length\",\n       y = \"Mass in Grams\",\n       title = \"Body Mass vs. Flipper Length\")"
+  },
+  {
+    "objectID": "test.html#check-starwars",
+    "href": "test.html#check-starwars",
+    "title": "Analysis of Penguin Data",
+    "section": "Check starwars",
+    "text": "Check starwars\n\nstarwars %&gt;% \n  slice_sample(n = 10) %&gt;% \n  select(name, birth_year, sex, homeworld)\n\n# A tibble: 10 × 4\n   name             birth_year sex   homeworld  \n   &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;      \n 1 Jek Tono Porkins         NA &lt;NA&gt;  Bestine IV \n 2 Gregar Typho             NA &lt;NA&gt;  Naboo      \n 3 Ratts Tyerel             NA male  Aleen Minor\n 4 Saesee Tiin              NA male  Iktotch    \n 5 Nien Nunb                NA male  Sullust    \n 6 Ki-Adi-Mundi             92 male  Cerea      \n 7 C-3PO                   112 none  Tatooine   \n 8 Yoda                    896 male  &lt;NA&gt;       \n 9 Tion Medon               NA male  Utapau     \n10 Owen Lars                52 male  Tatooine   \n\nstarwars %&gt;% ggplot(aes(x = homeworld)) + \n  geom_bar()"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "interests",
+    "section": "",
+    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites.\n\n1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site\n\n1 + 1\n\n[1] 2"
+  }
+]
