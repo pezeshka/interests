@@ -1,0 +1,23 @@
+---
+title: "Analysis of Penguin Data"
+author: "Ardeshir Pezeshk"
+---
+
+```{r}
+#| label: packages
+library(tidyverse)
+```
+Plot of relationship between flipper length and body mass
+```{r}
+#| label: test plot
+#| warning: false
+penguins %>% 
+  ggplot(aes(x = flipper_len, y = body_mass, color = species)) + 
+  geom_point() + 
+  theme_minimal() + 
+  labs(x = "Flipper Length",
+       y = "Mass in Grams",
+       title = "Body Mass vs. Flipper Length")
+```
+
+
