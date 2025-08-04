@@ -1,0 +1,76 @@
+---
+title: "Armed Conflicts"
+author: "Ardeshir Pezeshk"
+---
+
+```{r}
+#| label: packages
+library(tidyverse)
+library(httr)
+library(jsonlite)
+library(plotly)
+```
+
+## Access UCDP Datasets via API
+```{r}
+#| label: read in data ucdp prio armed conflict dataset
+#| warning: false
+get_prio_data <- function() {
+  base_url <- "https://ucdpapi.pcr.uu.se/api/ucdpprioconflict/25.1?pagesize=1000"
+  all_data <- list()
+  page <- 1
+
+  while (TRUE) {
+    url <- paste0(base_url, "&page=", page)
+    response <- GET(url)
+    if (status_code(response) != 200) {
+      stop("Failed to fetch data from UCDP API")
+    }
+    data <- fromJSON(content(response, "text", encoding = "UTF-8"))
+    if (length(data$Result) == 0) {
+      break
+    }
+    all_data <- c(all_data, list(data$Result))
+    page <- page + 1
+  }
+  bind_rows(all_data)
+}
+
+# Fetch and process the data
+df_prio <- get_prio_data()
+```
+
+## Number of Armed Conflict by Conflict Type
+Using the UCDP PRIO Armed Conflict Dataset, the below plot shows the number of armed conflicts over time. 
+```{r}
+df_prio |> 
+  group_by(year, type_of_conflict) |> 
+  summarize(count = n(), 
+            .groups = "drop") |> 
+  mutate(year = as.numeric(year), 
+         type_of_conflict = case_when(
+           type_of_conflict==1 ~ "Extrasystemic", 
+           type_of_conflict==2 ~ "Interstate", 
+           type_of_conflict==3 ~ "Intrastate", 
+           type_of_conflict==4 ~ "Int'l Intrastate", 
+           TRUE ~ NA
+         )) |> 
+  plot_ly(
+    x = ~year,
+    y = ~count,
+    color = ~type_of_conflict, # Creates a trace for each type and assigns color
+    type = 'scatter',
+    mode = 'lines',
+    stackgroup = 'one'         # This is the key to creating a stacked area chart
+  ) |> 
+  layout(
+    title = 'Conflict Count by Type Over Time (Native Plotly)',
+    xaxis = list(title = 'Year'),
+    yaxis = list(title = 'Count')
+  )
+```
+
+```{r}
+
+```
+
