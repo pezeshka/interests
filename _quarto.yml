@@ -10,8 +10,8 @@ website:
         text: Home
       - href: about.qmd
         text: About
-      - href: test.qmd
-        text: Penguin Analysis
+      - href: armed_conflict.qmd
+        text: Armed Conflicts
 
 format:
   html:
