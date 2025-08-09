@@ -33,7 +33,9 @@ Property taxes are tied to the value of a home and are paid by the homeowner. In
 
 ```{r}
 #| label: read in tax data
-tax_prop <- read_excel("data/taxratesbyclass.xlsx") %>% 
+tax_data_path <- "../../../Library/CloudStorage/GoogleDrive-pezeshka@gmail.com/My Drive/R/interests/data/"
+
+tax_prop <- read_excel(paste0(tax_data_path, "taxratesbyclass.xlsx")) %>% 
   rename_with(tolower) %>% 
   rename_with(~str_replace_all(., " ", "_")) |> 
   mutate(across(c(dor_code, fiscal_year), ~as.numeric(.))) %>% 
@@ -44,7 +46,7 @@ tax_prop <- read_excel("data/taxratesbyclass.xlsx") %>%
 #| label: get geo data.
 #| message: false
 library(sf)
-geojson_data <- read_sf("data/ma_municipalities.geojson")
+geojson_data <- read_sf(paste0(tax_data_path, "ma_municipalities.geojson"))
 
 merged_df <- tax_prop |> 
   left_join(geojson_data, 

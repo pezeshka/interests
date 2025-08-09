@@ -12,7 +12,8 @@ website:
         text: About
       - href: armed_conflict.qmd
         text: Armed Conflicts
-
+      - href: mass.qmd
+        text: MA Property Tax Rates
 format:
   html:
     theme:
