@@ -22,9 +22,9 @@ library(crosstalk)
 ## Summary
 If you spend enough time with homeowners, you're likely to hear them gripe about property taxes. And as you'd expect, the volume of griping increases with an increase in the amount of property taxes paid. 
 
-But even if you're not a homeowner, property taxes are a big deal. If you're homeshopping, along with principal, interest, and private mortgage insurance, it's one of the four biggest line items in your estimated mortgage payment. Perhaps more importantly, as a resident of whatever municipality, property taxes are often the largest contributor of revenue. 
+But even if you're not a homeowner, property taxes are a big deal. If you're home shopping, along with principal, interest, and private mortgage insurance, it's one of the four biggest line items in your estimated mortgage payment. Perhaps more importantly, as a resident of whatever municipality, property taxes are often the largest contributor of revenue. 
 
-In an effort to aid research and public conversation, I wanted to build a useable tool for folks to look at property tax rates across time and space. The interactive tables and graphics aim to do just that. 
+In an effort to aid research and public conversation, I wanted to build a usable tool for folks to look at property tax rates across time and space. The interactive tables and graphics below aim to do just that. 
 
 Data for property tax rate for Massachusetts municipalities can be found [here](https://dls-gw.dor.state.ma.us/reports/rdpage.aspx?rdreport=propertytaxinformation.taxratesbyclass.taxratesbyclass_main) and the data for municipality geometry can be found [here](https://gis.data.mass.gov/datasets/43664de869ca4b06a322c429473c65e5_0/explore?location=42.051370%2C-71.715950%2C9.42)
 
