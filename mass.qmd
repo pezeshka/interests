@@ -1,0 +1,114 @@
+---
+title: "Massachusetts"
+author: "Ardeshir Pezeshk"
+format: 
+  html: 
+    code-fold: true
+    code-summary: "show code"
+---
+
+```{r}
+#| label: packages
+library(tidyverse)
+library(readxl)
+library(plotly)
+library(httr)
+library(jsonlite)
+library(crosstalk)
+```
+
+## Summary
+If you spend enough time with homeowners, you're likely to hear them gripe about property taxes. And as you'd expect, the volume of griping increases with an increase in the amount of property taxes paid. 
+
+But even if you're not a homeowner, property taxes are a big deal. If you're homeshopping, along with principal, interest, and private mortgage insurance, it's one of the four biggest line items in your estimated mortgage payment. Perhaps more importantly, as a resident of whatever municipality, property taxes are often the largest contributor of revenue. 
+
+In an effort to aid research and public conversation, I wanted to build a useable tool for folks to look at property tax rates across time and space. The interactive tables and graphics aim to do just that. 
+
+Data for property tax rate for Massachusetts municipalities can be found [here](https://dls-gw.dor.state.ma.us/reports/rdpage.aspx?rdreport=propertytaxinformation.taxratesbyclass.taxratesbyclass_main). 
+
+## But What are property taxes?
+
+Property taxes are tied to the value of a home and are paid by the homeowner. In Massachusetts, The total *amount paid* is a function of the **assessed value** of a home and the property tax rate. It's important to note that the *assessed value* of a home is not the same as the *cost* of the home. For example, in California, property taxes are largely a function of the purchasing price and rate. But in Massachusetts, the *purchasing price* of a home and its *assessed value* are distinct with the *assessed value* often being lower than the purchasing price. 
+
+
+```{r}
+#| label: read in tax data
+tax_prop <- read_excel("data/taxratesbyclass.xlsx") %>% 
+  rename_with(tolower) %>% 
+  rename_with(~str_replace_all(., " ", "_")) |> 
+  mutate(across(c(dor_code, fiscal_year), ~as.numeric(.))) %>% 
+  filter(municipality!="Devens")
+```
+
+```{r}
+#| label: get geo data.
+#| message: false
+library(sf)
+geojson_data <- read_sf("data/ma_municipalities.geojson")
+
+merged_df <- tax_prop |> 
+  left_join(geojson_data, 
+            join_by(dor_code==TOWN_ID))
+
+
+map_df <- merged_df %>%
+  filter(fiscal_year == 2025, 
+         !is.na(residential))
+
+# Step 2: Convert to sf object if not already
+map_sf <- st_as_sf(map_df)
+
+# Step 3: Plot with plotly
+fig <- 
+  plot_ly(
+    map_sf,
+    split = ~municipality,
+    color = ~residential,            # Color polygons by the numeric residential value
+    showlegend = FALSE,
+    stroke = I("white"),             # Sets the border color
+    span = I(0.3),                   # Sets the border width
+    text = ~paste0(                  # Defines the custom hover text
+      "<b>", municipality, "</b><br>",
+      "Residential Tax Rate: ", round(residential, 2)
+    ),
+    hoverinfo = "text",
+    hoveron = "fills"
+  ) %>%
+  hide_colorbar() %>%                # Add this line to remove the color scale legend
+  layout(
+    title = "2025 Residential Property Tax Rates by Municipality<br>Per $1,000 in Assessed Value",
+    geo = list(visible = FALSE)
+  )
+
+fig
+```
+
+```{r}
+shared_df <- SharedData$new(tax_prop, key = ~municipality)
+
+gg_rates <- ggplot(shared_df, aes(x = fiscal_year, y = residential, color = municipality, group = municipality)) +
+  geom_line(linewidth = 1) + # No need to set color here
+  geom_point(size = 2.5) +   # No need to set color here
+  labs(
+    title = "Residential Property Tax Rates Over Time",
+    x = "Year",
+    y = "Rate per $1,000 Assessed Value",
+    color = "Municipality" # Sets the legend title
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none") # Hide the ggplot legend
+
+bscols(
+  widths = c(3, 9), # Define column widths (3 + 9 = 12)
+  filter_select(
+    id = "municipality_filter",
+    label = "Select Municipality/ies:",
+    sharedData = shared_df,
+    group = ~municipality,
+    multiple = TRUE,
+    all = FALSE
+  ), 
+  ggplotly(gg_rates, tooltip = c("year", "y", "municipality")) %>%
+    layout(legend = list(title = list(text = '<b>Municipality</b>'))))
+```
+
