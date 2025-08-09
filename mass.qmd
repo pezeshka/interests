@@ -114,6 +114,7 @@ filter_select(
 )
 
 ggplotly(gg_rates, tooltip = c("year", "y", "municipality")) %>%
-  layout(legend = list(title = list(text = '<b>Municipality</b>')))
+  layout(legend = list(title = list(text = '<b>Municipality</b>'))) %>% 
+  config(displayModeBar = FALSE)
 ```
 
