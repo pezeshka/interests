@@ -9,6 +9,8 @@ format:
 
 ```{r}
 #| label: packages
+#| message: false
+#| echo: false
 library(tidyverse)
 library(readxl)
 library(plotly)
@@ -24,7 +26,7 @@ But even if you're not a homeowner, property taxes are a big deal. If you're hom
 
 In an effort to aid research and public conversation, I wanted to build a useable tool for folks to look at property tax rates across time and space. The interactive tables and graphics aim to do just that. 
 
-Data for property tax rate for Massachusetts municipalities can be found [here](https://dls-gw.dor.state.ma.us/reports/rdpage.aspx?rdreport=propertytaxinformation.taxratesbyclass.taxratesbyclass_main). 
+Data for property tax rate for Massachusetts municipalities can be found [here](https://dls-gw.dor.state.ma.us/reports/rdpage.aspx?rdreport=propertytaxinformation.taxratesbyclass.taxratesbyclass_main) and the data for municipality geometry can be found [here](https://gis.data.mass.gov/datasets/43664de869ca4b06a322c429473c65e5_0/explore?location=42.051370%2C-71.715950%2C9.42)
 
 ## But What are property taxes?
 
@@ -32,51 +34,53 @@ Property taxes are tied to the value of a home and are paid by the homeowner. In
 
 
 ```{r}
-#| label: read in tax data
+#| label: tax and geo data
+#| message: false
+# path to data
 tax_data_path <- "../../../Library/CloudStorage/GoogleDrive-pezeshka@gmail.com/My Drive/R/interests/data/"
 
+# read in property tax data
 tax_prop <- read_excel(paste0(tax_data_path, "taxratesbyclass.xlsx")) %>% 
   rename_with(tolower) %>% 
   rename_with(~str_replace_all(., " ", "_")) |> 
   mutate(across(c(dor_code, fiscal_year), ~as.numeric(.))) %>% 
-  filter(municipality!="Devens")
-```
+  filter(municipality!="Devens") # not in geojson data
 
-```{r}
-#| label: get geo data.
-#| message: false
+# read in geometry data for the municipalities
 library(sf)
 geojson_data <- read_sf(paste0(tax_data_path, "ma_municipalities.geojson"))
 
+# merge tax with geo data
 merged_df <- tax_prop |> 
   left_join(geojson_data, 
-            join_by(dor_code==TOWN_ID))
+            join_by(dor_code==TOWN_ID)) %>% 
+  filter(fiscal_year==2025, 
+         !is.na(residential)) %>% 
+  select(municipality, residential, geometry)
 
+# make mappable object. 
+map_sf <- st_as_sf(merged_df)
+```
 
-map_df <- merged_df %>%
-  filter(fiscal_year == 2025, 
-         !is.na(residential))
-
-# Step 2: Convert to sf object if not already
-map_sf <- st_as_sf(map_df)
-
-# Step 3: Plot with plotly
+```{r}
+#| label: make plotly figure
+#| message: false
 fig <- 
   plot_ly(
     map_sf,
     split = ~municipality,
-    color = ~residential,            # Color polygons by the numeric residential value
+    color = ~residential,            # fill color by rate
     showlegend = FALSE,
-    stroke = I("white"),             # Sets the border color
-    span = I(0.3),                   # Sets the border width
-    text = ~paste0(                  # Defines the custom hover text
+    stroke = I("white"),             # Set the border color
+    span = I(0.3),                   # Set the border width
+    text = ~paste0(                  # Define hover text
       "<b>", municipality, "</b><br>",
       "Residential Tax Rate: ", round(residential, 2)
     ),
     hoverinfo = "text",
     hoveron = "fills"
   ) %>%
-  hide_colorbar() %>%                # Add this line to remove the color scale legend
+  hide_colorbar() %>%
   layout(
     title = "2025 Residential Property Tax Rates by Municipality<br>Per $1,000 in Assessed Value",
     geo = list(visible = FALSE)
@@ -89,8 +93,8 @@ fig
 shared_df <- SharedData$new(tax_prop, key = ~municipality)
 
 gg_rates <- ggplot(shared_df, aes(x = fiscal_year, y = residential, color = municipality, group = municipality)) +
-  geom_line(linewidth = 1) + # No need to set color here
-  geom_point(size = 2.5) +   # No need to set color here
+  geom_line(linewidth = 1) + 
+  geom_point(size = 2.5) +
   labs(
     title = "Residential Property Tax Rates Over Time",
     x = "Year",
@@ -100,17 +104,16 @@ gg_rates <- ggplot(shared_df, aes(x = fiscal_year, y = residential, color = muni
   theme_minimal(base_size = 14) +
   theme(legend.position = "none") # Hide the ggplot legend
 
-bscols(
-  widths = c(3, 9), # Define column widths (3 + 9 = 12)
-  filter_select(
-    id = "municipality_filter",
-    label = "Select Municipality/ies:",
-    sharedData = shared_df,
-    group = ~municipality,
-    multiple = TRUE,
-    all = FALSE
-  ), 
-  ggplotly(gg_rates, tooltip = c("year", "y", "municipality")) %>%
-    layout(legend = list(title = list(text = '<b>Municipality</b>'))))
+filter_select(
+  id = "municipality_filter",
+  label = "Select Municipality/ies:",
+  sharedData = shared_df,
+  group = ~municipality,
+  multiple = TRUE,
+  all = FALSE
+)
+
+ggplotly(gg_rates, tooltip = c("year", "y", "municipality")) %>%
+  layout(legend = list(title = list(text = '<b>Municipality</b>')))
 ```
 
