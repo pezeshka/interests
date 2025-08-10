@@ -94,11 +94,11 @@ fig
 ```
 
 ## Property Tax Rates Over Time
-Below I've visualized Property Tax Rates over time. The filter allows you to choose one or counties as your starting pot. By default it is set to 'Hampshire' county. From there, you can select and deselect towns and compare. 
+Below I've visualized Property Tax Rates over time. The filters below allow you to choose one or more municipalities or counties. You can also narrow the time range by using the slider filter for year. By default the municipality filter is set to `Northampton` with the county blank and showing all available data. 
 ```{r}
 library(crosstalk)
 # need county in tax_prop 
-shared_df <- SharedData$new(merged_df, key = ~county)
+shared_df <- SharedData$new(merged_df)
 
 gg_rates <- ggplot(shared_df, aes(x = fiscal_year, y = residential, color = municipality, group = municipality)) +
   geom_line(linewidth = 1) + 
@@ -111,14 +111,33 @@ gg_rates <- ggplot(shared_df, aes(x = fiscal_year, y = residential, color = muni
   ) +
   theme_minimal(base_size = 14)
 
-filter_select(
-  id = "county_filter",
-  label = "Select County or Counties:",
-  sharedData = shared_df,
-  group = ~county,
-  multiple = TRUE,
-  all = FALSE
-)
+bscols(
+  widths = c(4, 4, 4), 
+  filter_select(
+    id = "municipality_filter", 
+    label = "Select Municipality/ies", 
+    sharedData = shared_df, 
+    group = ~municipality, 
+    multiple = TRUE, 
+    all = FALSE
+  ), 
+  filter_select(
+    id = "county_filter",
+    label = "Select County or Counties:",
+    sharedData = shared_df,
+    group = ~county,
+    multiple = TRUE,
+    all = FALSE
+  ), 
+  filter_slider(
+      id = "year_filter",
+      label = "Select Year Range:",
+      sharedData = shared_df,
+      column = ~fiscal_year, # Filter by the 'year' column
+      step = 1, # Move the slider in 1-year increments
+      sep = "" # Removes the comma from thousands in year (e.g., 2,024)
+    )
+  )
 
 remove_buttons <- c("zoom", 
                     "pan", 
@@ -142,15 +161,19 @@ ggplotly(gg_rates,
       yref = "paper", # Y-reference to the plot paper
       xanchor = "right", # Anchor the text to the right
       yanchor = "auto", # Auto-adjust y-anchor
-      font = list(size = 10, color = "grey"))) %>% 
+      font = list(size = 10, color = "grey"))) %>%
   plotly::config(modeBarButtonsToRemove = remove_buttons, 
                  displaylogo = FALSE)
 ```
 ```{js}
 function filter_default() {
-    document.getElementById("county_filter").getElementsByClassName("selectized") 
-[0].selectize.setValue("Hampshire", false);
+    document.getElementById("municipality_filter").getElementsByClassName("selectized") 
+[0].selectize.setValue("Northampton", false);
  }
 window.onload = filter_default;
 ```
+
+```{r}
+
 ```
+
