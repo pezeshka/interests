@@ -32,9 +32,12 @@ Data for property tax rate for Massachusetts municipalities can be found [here](
 
 Property taxes are tied to the value of a home and are paid by the homeowner. In Massachusetts, The total *amount paid* is a function of the **assessed value** of a home and the property tax rate. It's important to note that the *assessed value* of a home is not the same as the *cost* of the home. For example, in California, property taxes are largely a function of the purchasing price and rate. But in Massachusetts, the *purchasing price* of a home and its *assessed value* are distinct with the *assessed value* often being lower than the purchasing price. 
 
+Why the discrepancy between assessed value and purchase price? The major reason in Massachusetts is tied to the passage of Proposition 2 1/2 which passed in 1980 and went into effect in 1982. The state provides [a number of YouTube videos(!)](https://www.mass.gov/info-details/proposition-2-12-and-tax-rate-process) that explain the proposition and its effects. That said, the TLDR is that it limited the annual increase in property tax revenue municipalities could levy by 2.5%. For example, if my town of Northampton raised \$1,000,000 in property tax revenue, the max it could raise the following year would be \$1,025,000.
 
+## Visualizing Rates Across Massachusetts in the Current Fiscal Year
+The map below highlights rates across all municipalities in the state of Massachusetts. 
 ```{r}
-#| label: tax and geo data
+#| label: tax and geo data + plotly figure
 #| message: false
 # path to data
 tax_data_path <- "../../../Library/CloudStorage/GoogleDrive-pezeshka@gmail.com/My Drive/R/interests/data/"
@@ -48,23 +51,23 @@ tax_prop <- read_excel(paste0(tax_data_path, "taxratesbyclass.xlsx")) %>%
 
 # read in geometry data for the municipalities
 library(sf)
-geojson_data <- read_sf(paste0(tax_data_path, "ma_municipalities.geojson"))
+geojson_data <- read_sf(paste0(tax_data_path, "ma_municipalities.geojson")) %>% 
+  rename_with(tolower) %>% 
+  mutate(county = str_to_title(county))
 
 # merge tax with geo data
 merged_df <- tax_prop |> 
   left_join(geojson_data, 
-            join_by(dor_code==TOWN_ID)) %>% 
+            join_by(dor_code==town_id)) 
+
+map_df <- merged_df %>% 
   filter(fiscal_year==2025, 
          !is.na(residential)) %>% 
-  select(municipality, residential, geometry)
+  select(municipality, residential, county, geometry)
 
 # make mappable object. 
-map_sf <- st_as_sf(merged_df)
-```
+map_sf <- st_as_sf(map_df)
 
-```{r}
-#| label: make plotly figure
-#| message: false
 fig <- 
   plot_ly(
     map_sf,
@@ -75,7 +78,8 @@ fig <-
     span = I(0.3),                   # Set the border width
     text = ~paste0(                  # Define hover text
       "<b>", municipality, "</b><br>",
-      "Residential Tax Rate: ", round(residential, 2)
+      "Residential Tax Rate: $", round(residential, 2), "</b><br>",
+      "County: ", county
     ),
     hoverinfo = "text",
     hoveron = "fills"
@@ -89,8 +93,12 @@ fig <-
 fig
 ```
 
+## Property Tax Rates Over Time
+Below I've visualized Property Tax Rates over time. The filter allows you to choose one or counties as your starting pot. By default it is set to 'Hampshire' county. From there, you can select and deselect towns and compare. 
 ```{r}
-shared_df <- SharedData$new(tax_prop, key = ~municipality)
+library(crosstalk)
+# need county in tax_prop 
+shared_df <- SharedData$new(merged_df, key = ~county)
 
 gg_rates <- ggplot(shared_df, aes(x = fiscal_year, y = residential, color = municipality, group = municipality)) +
   geom_line(linewidth = 1) + 
@@ -101,20 +109,48 @@ gg_rates <- ggplot(shared_df, aes(x = fiscal_year, y = residential, color = muni
     y = "Rate per $1,000 Assessed Value",
     color = "Municipality" # Sets the legend title
   ) +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none") # Hide the ggplot legend
+  theme_minimal(base_size = 14)
 
 filter_select(
-  id = "municipality_filter",
-  label = "Select Municipality/ies:",
+  id = "county_filter",
+  label = "Select County or Counties:",
   sharedData = shared_df,
-  group = ~municipality,
+  group = ~county,
   multiple = TRUE,
   all = FALSE
 )
 
-ggplotly(gg_rates, tooltip = c("year", "y", "municipality")) %>%
-  layout(legend = list(title = list(text = '<b>Municipality</b>'))) %>% 
-  config(displayModeBar = FALSE)
-```
+remove_buttons <- c("zoom", 
+                    "pan", 
+                    "select", 
+                    "zoomIn", 
+                    "zoomOut", 
+                    "autoScale", 
+                    "lasso2d", 
+                    "hoverClosestCartesian")
 
+ggplotly(gg_rates, 
+         tooltip = c("fiscal_year", "y", "municipality", "county")) %>%
+  layout(
+    legend = list(title = list(text = '<b>Municipality</b>')), 
+    annotations = list(
+      x = 1, # X-coordinate (1 means right edge of the plot paper)
+      y = -0.1, # Y-coordinate (-0.1 means slightly below the bottom edge of the plot paper)
+      text = "Source: MA Department of Revenue", # The caption text
+      showarrow = FALSE, # Hide the arrow
+      xref = "paper", # X-reference to the plot paper
+      yref = "paper", # Y-reference to the plot paper
+      xanchor = "right", # Anchor the text to the right
+      yanchor = "auto", # Auto-adjust y-anchor
+      font = list(size = 10, color = "grey"))) %>% 
+  plotly::config(modeBarButtonsToRemove = remove_buttons, 
+                 displaylogo = FALSE)
+```
+```{js}
+function filter_default() {
+    document.getElementById("county_filter").getElementsByClassName("selectized") 
+[0].selectize.setValue("Hampshire", false);
+ }
+window.onload = filter_default;
+```
+```
