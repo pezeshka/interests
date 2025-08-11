@@ -1,10 +1,11 @@
 ---
-title: "Massachusetts"
+title: "MA Property Tax"
 author: "Ardeshir Pezeshk"
-format: 
+format:
   html: 
     code-fold: true
     code-summary: "show code"
+    toc: true
 ---
 
 ```{r}
@@ -24,15 +25,18 @@ If you spend enough time with homeowners, you're likely to hear them gripe about
 
 But even if you're not a homeowner, property taxes are a big deal. If you're home shopping, along with principal, interest, and private mortgage insurance, it's one of the four biggest line items in your estimated mortgage payment. Perhaps more importantly, as a resident of whatever municipality, property taxes are often the largest contributor of revenue. 
 
-In an effort to aid research and public conversation, I wanted to build a usable tool for folks to look at property tax rates across time and space. The interactive tables and graphics below aim to do just that. 
+The questions of who to tax, at what rate, and for what purpose are at the core local, state, and national politics. In my own town, the local paper has been filled with news and commentary regarding funding for local schools, the poor quality of roads, and the budget more generally. It's even a flashpoint in this year's [municipal election](https://www.gazettenet.com/Guest-columnist-Simon-62626497). 
 
+In an effort to ground public conversation in data, I wanted to build a usable tool for folks to look at property tax rates across time and space. The interactive tables and graphics below aim to do just that. 
+
+### A note on data
 Data for property tax rate for Massachusetts municipalities can be found [here](https://dls-gw.dor.state.ma.us/reports/rdpage.aspx?rdreport=propertytaxinformation.taxratesbyclass.taxratesbyclass_main) and the data for municipality geometry can be found [here](https://gis.data.mass.gov/datasets/43664de869ca4b06a322c429473c65e5_0/explore?location=42.051370%2C-71.715950%2C9.42)
 
 ## But What are property taxes?
 
 Property taxes are tied to the value of a home and are paid by the homeowner. In Massachusetts, The total *amount paid* is a function of the **assessed value** of a home and the property tax rate. It's important to note that the *assessed value* of a home is not the same as the *cost* of the home. For example, in California, property taxes are largely a function of the purchasing price and rate. But in Massachusetts, the *purchasing price* of a home and its *assessed value* are distinct with the *assessed value* often being lower than the purchasing price. 
 
-Why the discrepancy between assessed value and purchase price? The major reason in Massachusetts is tied to the passage of Proposition 2 1/2 which passed in 1980 and went into effect in 1982. The state provides [a number of YouTube videos(!)](https://www.mass.gov/info-details/proposition-2-12-and-tax-rate-process) that explain the proposition and its effects. That said, the TLDR is that it limited the annual increase in property tax revenue municipalities could levy by 2.5%. For example, if my town of Northampton raised \$1,000,000 in property tax revenue, the max it could raise the following year would be \$1,025,000.
+Why the discrepancy between assessed value and purchase price? The major reason in Massachusetts is tied to the passage of Proposition 2 1/2 which passed in 1980 and went into effect in 1982. The state provides [a number of YouTube videos(!)](https://www.mass.gov/info-details/proposition-2-12-and-tax-rate-process) that explain the proposition and its effects. [There's also a not-so-easy to follow primer](https://www.mass.gov/doc/levy-limits-a-primer-on-proposition-2-12-0/download#:~:text=Proposition%2021%E2%81%842%20allows%20a%20community%20to%20assess%20taxes,of%202.5%20percent%20each%20year.). That said, the TLDR is that it limited the annual increase in property tax revenue municipalities could levy by 2.5%. For example, if my town of Northampton raised \$1,000,000 in property tax revenue, the max it could raise the following year would be \$1,025,000. There are exceptions for new growth and overrides but that's the jist. 
 
 ## Visualizing Rates Across Massachusetts in the Current Fiscal Year
 The map below highlights rates across all municipalities in the state of Massachusetts. 
@@ -40,33 +44,14 @@ The map below highlights rates across all municipalities in the state of Massach
 #| label: tax and geo data + plotly figure
 #| message: false
 # path to data
-tax_data_path <- "../../../Library/CloudStorage/GoogleDrive-pezeshka@gmail.com/My Drive/R/interests/data/"
+data_path <- "../../../Library/CloudStorage/GoogleDrive-pezeshka@gmail.com/My Drive/R/interests_github/data/"
 
-# read in property tax data
-tax_prop <- read_excel(paste0(tax_data_path, "taxratesbyclass.xlsx")) %>% 
-  rename_with(tolower) %>% 
-  rename_with(~str_replace_all(., " ", "_")) |> 
-  mutate(across(c(dor_code, fiscal_year), ~as.numeric(.))) %>% 
-  filter(municipality!="Devens") # not in geojson data
+# read in property tax data with geo. Saved as R file
+tax_prop <- read_rds(file = paste0(data_path, "clean_tax_geo_data.R"))
 
 # read in geometry data for the municipalities
 library(sf)
-geojson_data <- read_sf(paste0(tax_data_path, "ma_municipalities.geojson")) %>% 
-  rename_with(tolower) %>% 
-  mutate(county = str_to_title(county))
-
-# merge tax with geo data
-merged_df <- tax_prop |> 
-  left_join(geojson_data, 
-            join_by(dor_code==town_id)) 
-
-map_df <- merged_df %>% 
-  filter(fiscal_year==2025, 
-         !is.na(residential)) %>% 
-  select(municipality, residential, county, geometry)
-
-# make mappable object. 
-map_sf <- st_as_sf(map_df)
+map_sf <- st_read(paste0(data_path, "clean_ma_geo.geojson"))
 
 fig <- 
   plot_ly(
@@ -98,7 +83,7 @@ Below I've visualized Property Tax Rates over time. The filters below allow you 
 ```{r}
 library(crosstalk)
 # need county in tax_prop 
-shared_df <- SharedData$new(merged_df)
+shared_df <- SharedData$new(tax_prop)
 
 gg_rates <- ggplot(shared_df, aes(x = fiscal_year, y = residential, color = municipality, group = municipality)) +
   geom_line(linewidth = 1) + 
@@ -172,8 +157,3 @@ function filter_default() {
  }
 window.onload = filter_default;
 ```
-
-```{r}
-
-```
-
