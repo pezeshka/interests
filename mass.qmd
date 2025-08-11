@@ -43,6 +43,7 @@ The map below highlights rates across all municipalities in the state of Massach
 ```{r}
 #| label: tax and geo data + plotly figure
 #| message: false
+#| warning: false
 # path to data
 data_path <- "../../../Library/CloudStorage/GoogleDrive-pezeshka@gmail.com/My Drive/R/interests_github/data/"
 
@@ -51,7 +52,7 @@ tax_prop <- read_rds(file = paste0(data_path, "clean_tax_geo_data.R"))
 
 # read in geometry data for the municipalities
 library(sf)
-map_sf <- st_read(paste0(data_path, "clean_ma_geo.geojson"))
+map_sf <- st_read(paste0(data_path, "clean_ma_geo.geojson"), quiet = TRUE)
 
 fig <- 
   plot_ly(
