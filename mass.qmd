@@ -175,6 +175,7 @@ Note: Parcels are not the same as units. For example, in the parcel data the sta
 
 ```{r}
 #| label: read in parcel count data
+#| message: false
 parcel_count_df <- read_csv(paste0(data_path, "parcel_counts.csv"))
 ```
 
