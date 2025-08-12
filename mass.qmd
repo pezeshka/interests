@@ -32,14 +32,14 @@ In an effort to ground public conversation in data, I wanted to build a usable t
 ### A note on data
 Data for property tax rate for Massachusetts municipalities can be found [here](https://dls-gw.dor.state.ma.us/reports/rdpage.aspx?rdreport=propertytaxinformation.taxratesbyclass.taxratesbyclass_main) and the data for municipality geometry can be found [here](https://gis.data.mass.gov/datasets/43664de869ca4b06a322c429473c65e5_0/explore?location=42.051370%2C-71.715950%2C9.42)
 
-## But What are property taxes?
+## But What are property taxes? {#sec-taxes}
 
 Property taxes are tied to the value of a home and are paid by the homeowner. In Massachusetts, The total *amount paid* is a function of the **assessed value** of a home and the property tax rate. It's important to note that the *assessed value* of a home is not the same as the *cost* of the home. For example, in California, property taxes are largely a function of the purchasing price and rate. But in Massachusetts, the *purchasing price* of a home and its *assessed value* are distinct with the *assessed value* often being lower than the purchasing price. 
 
 Why the discrepancy between assessed value and purchase price? The major reason in Massachusetts is tied to the passage of Proposition 2 1/2 which passed in 1980 and went into effect in 1982. The state provides [a number of YouTube videos(!)](https://www.mass.gov/info-details/proposition-2-12-and-tax-rate-process) that explain the proposition and its effects. [There's also a not-so-easy to follow primer](https://www.mass.gov/doc/levy-limits-a-primer-on-proposition-2-12-0/download#:~:text=Proposition%2021%E2%81%842%20allows%20a%20community%20to%20assess%20taxes,of%202.5%20percent%20each%20year.). That said, the TLDR is that it limited the annual increase in property tax revenue municipalities could levy by 2.5%. For example, if my town of Northampton raised \$1,000,000 in property tax revenue, the max it could raise the following year would be \$1,025,000. There are exceptions for new growth and overrides but that's the jist. 
 
 ## Visualizing Rates Across Massachusetts in the Current Fiscal Year
-The map below highlights rates across all municipalities in the state of Massachusetts. 
+The map below highlights rates across all municipalities in the state of Massachusetts. The lighter the color, the lower the rate.
 ```{r}
 #| label: tax and geo data + plotly figure
 #| message: false
@@ -158,3 +158,23 @@ function filter_default() {
  }
 window.onload = filter_default;
 ```
+
+Northampton's property tax rate peaked in 2022 at \$17.89 per \$1,000 of assessed value following the pandemic and the dramatic rise in home prices. The rate has since dropped by ~22% with the 2025 Fiscal Year rate at \$13.89. 
+
+But just because the rate drops does not mean that the total amount paid will decline. That's because there's a dance between assessed value and the tax rate. If the assessed value significantly climbs, keeping the rate constant might violate Proposition 2.5 (see @sec-taxes), overrides and new construction notwithstanding. 
+
+And so down the rabbit hole we go to get a better understanding of the number of properties, the assessed value of all properties, and the how the ratio of assessed value to parcel or property counts have changed over time. 
+
+## All About Parcels
+
+Note: Parcels are not the same as units. For example, in the parcel data the state mixes together apartments that can have as few as four units with no explicit upward bound. The same may be true for condos.[^1] 
+
+[^1]: I will update when I hear back from the Data Analytics and Resources Bureau.
+
+... still writing this section so check back in the next few days! Today = `r Sys.Date()`.
+
+```{r}
+#| label: read in parcel count data
+parcel_count_df <- read_csv(paste0(data_path, "parcel_counts.csv"))
+```
+
