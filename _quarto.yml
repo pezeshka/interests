@@ -6,8 +6,6 @@ website:
   title: "Interests"
   navbar:
     left:
-      - href: about.qmd
-        text: About
       - href: armed_conflict.qmd
         text: Armed Conflicts
       - href: mass.qmd
