@@ -1,11 +1,29 @@
 ---
-title: "Blah"
+title: "Ardeshir Pezeshk"
 ---
 
-This is a Quarto website.
+This page represents a growing collection of my interests and how I leverage data to make sense of the world around me. Take a look around and if you're interested in a project or have questions, you can email me at [pezeshka@gmail.com](mailto:pezeshka@gmail.com).
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+## About
 
-```{r}
-1 + 1
-```
+I'm a data analytics professional with a passion for helping organizations make data-driven decisions. I live with my family in the Pioneer Valley of Western Massachusetts. 
+
+### Professional
+
+My work focuses on the full data lifecycle—from collection to interpretation. I help organizations:
+
+* **Understand Existing Data:** By diving deep into current datasets to uncover trends and opportunities.
+* **Improve Data Collection:** By building systems that improve how data is collected and measured. 
+* **Drive Strategy:** By working collaboratively to define and operationalize goals and Key Performance Indicators (KPIs).
+
+My experience spans diverse environments, including B2B, academic research, collegiate-level teaching, and small business consulting.
+
+You can find my current résumé [here](https://drive.google.com/file/d/1kM9ImNQi08-RJFJR9l2CmvvWIUH6cJAu/view?usp=sharing).
+
+### Personal Life & Hobbies
+
+I'm a happily married husband and father to two amazing daughters. In my free time, I love to play basketball and golf. I also have a penchant for (obsessively) planning our family's financial future, an activity my wife graciously tolerates.
+
+### Community Involvement
+
+I believe in giving back to the local community and currently serve on the board of the [International Language Institute of Massachusetts](https://ili.edu/) as a member of the Finance Committee.
