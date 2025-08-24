@@ -1,0 +1,21 @@
+/* invest_styles.css */
+
+/* This sets a new, wider maximum width for the standard text content. */
+.quarto-body-content {
+  max-width: 900px !important; 
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Make the title's container block full-width */
+#title-block-header {
+  max-width: none !important;
+}
+
+/* This styles the main page title and centers it within its full-width container. */
+h1.title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-align: center;
+}
