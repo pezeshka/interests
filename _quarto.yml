@@ -1,3 +1,7 @@
+project:
+  type: website
+  output-dir: docs
+
 website:
   title: "Interests"
   sidebar:
@@ -5,8 +9,14 @@ website:
     search: true
     contents:
       - href: armed_conflict.qmd
-        text: Armed Conflicts
+        text: "Armed Conflicts"
       - href: mass.qmd
-        text: MA Property Tax Rates
+        text: "MA Property Tax Rates"
       - href: investment_calculator.qmd
-        text: Investment Calculator
+        text: "Investment Calculator"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
