@@ -1,5 +1,0 @@
-/* Center the Quarto-generated title and subtitle */
-h1.title, p.subtitle {
-    text-align: center;
-    margin-bottom: 2rem; 
-}
