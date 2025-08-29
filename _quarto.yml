@@ -5,7 +5,7 @@ project:
 website:
   title: "Interests"
   sidebar:
-    style: "docked"
+    style: "floating"
     search: true
     contents:
       - href: armed_conflict.qmd

@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- App deps (isolated inside iframe) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .card {
+      background-color: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      padding: 1.5rem;
+    }
+    .btn-primary {
+      background-color: #3b82f6; color: white; font-weight: 600;
+      padding: 0.75rem 1.5rem; border-radius: 0.5rem; transition: background-color 0.2s;
+    }
+    .btn-primary:hover { background-color: #2563eb; }
+    input[type="number"], select {
+      border-radius: 0.375rem; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; width: 100%;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="card">
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Inputs -->
+        <div class="lg:w-1/3 space-y-4">
+          <h2 class="text-xl font-semibold text-gray-700">Financial Inputs</h2>
+
+          <div>
+            <label for="initial_investment" class="block text-sm font-medium text-gray-700">Initial Investment ($)</label>
+            <input type="number" id="initial_investment" value="10000" min="0" class="mt-1">
+          </div>
+
+          <div>
+            <label for="contribution" class="block text-sm font-medium text-gray-700">Contribution per Paycheck ($)</label>
+            <input type="number" id="contribution" value="500" min="0" class="mt-1">
+          </div>
+
+          <div>
+            <label for="pay_frequency" class="block text-sm font-medium text-gray-700">Pay Frequency</label>
+            <select id="pay_frequency" class="mt-1">
+              <option value="52">Weekly</option>
+              <option value="26" selected>Bi-weekly</option>
+              <option value="24">Semi-monthly</option>
+              <option value="12">Monthly</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="years" class="block text-sm font-medium text-gray-700">
+              Investment Duration (Years): <span id="years-label" class="font-bold">20</span>
+            </label>
+            <input type="range" id="years" min="1" max="50" value="20"
+                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1">
+          </div>
+
+          <hr class="my-4">
+
+          <h3 class="text-lg font-semibold text-gray-700">Scenario Rates of Return</h3>
+
+          <div>
+            <label for="bear_rate" class="block text-sm font-medium text-gray-700">
+              Bear Case (%): <span id="bear-rate-label" class="font-bold text-red-600">4.0</span>
+            </label>
+            <input type="range" id="bear_rate" min="0" max="20" value="4" step="0.1"
+                   class="w-full h-2 bg-red-100 rounded-lg appearance-none cursor-pointer mt-1">
+          </div>
+
+          <div>
+            <label for="base_rate" class="block text-sm font-medium text-gray-700">
+              Base Case (%): <span id="base-rate-label" class="font-bold text-blue-600">7.0</span>
+            </label>
+            <input type="range" id="base_rate" min="0" max="20" value="7" step="0.1"
+                   class="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer mt-1">
+          </div>
+
+          <div>
+            <label for="bull_rate" class="block text-sm font-medium text-gray-700">
+              Bull Case (%): <span id="bull-rate-label" class="font-bold text-green-600">10.0</span>
+            </label>
+            <input type="range" id="bull_rate" min="0" max="20" value="10" step="0.1"
+                   class="w-full h-2 bg-green-100 rounded-lg appearance-none cursor-pointer mt-1">
+          </div>
+
+          <button id="calculate" class="w-full btn-primary mt-4">Calculate Growth</button>
+        </div>
+
+        <!-- Chart + Summary -->
+        <div class="lg:w-2/3 space-y-8">
+          <div class="card">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Growth Comparison</h2>
+            <div class="w-full h-96">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Investment Summary</h2>
+            <div id="summaryText" class="text-gray-700">
+              <p>Click "Calculate Growth" to see your projection.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // DOM refs
+  const calculateBtn = document.getElementById('calculate');
+  const summaryTextEl = document.getElementById('summaryText');
+  const chartCanvas = document.getElementById('growthChart');
+  const initialInvestmentEl = document.getElementById('initial_investment');
+  const contributionEl = document.getElementById('contribution');
+  const payFrequencyEl = document.getElementById('pay_frequency');
+  const yearsEl = document.getElementById('years');
+  const bearRateEl = document.getElementById('bear_rate');
+  const baseRateEl = document.getElementById('base_rate');
+  const bullRateEl = document.getElementById('bull_rate');
+  const yearsLabel = document.getElementById('years-label');
+  const bearRateLabel = document.getElementById('bear-rate-label');
+  const baseRateLabel = document.getElementById('base-rate-label');
+  const bullRateLabel = document.getElementById('bull-rate-label');
+
+  let growthChart;
+
+  function calculateGrowth(initialPrincipal, years, annualRate, periodsPerYear, contribution) {
+    const currentYear = new Date().getFullYear();
+    const periodicRate = Math.pow(1 + annualRate, 1 / periodsPerYear) - 1;
+    const totalPeriods = years * periodsPerYear;
+    let balance = initialPrincipal;
+    let totalContributions = initialPrincipal;
+    let totalReturns = 0;
+    const timeline = [{ year: currentYear, balance: initialPrincipal }];
+
+    for (let i = 1; i <= totalPeriods; i++) {
+      const returnsThisPeriod = balance * periodicRate;
+      balance += returnsThisPeriod + contribution;
+      totalContributions += contribution;
+      totalReturns += returnsThisPeriod;
+      if (i % periodsPerYear === 0) {
+        timeline.push({ year: currentYear + (i / periodsPerYear), balance });
+      }
+    }
+    if (totalPeriods % periodsPerYear !== 0) {
+      timeline.push({ year: currentYear + years, balance });
+    }
+    return { timeline, final: { balance, totalContributions, totalReturns } };
+  }
+
+  function renderChart(bearData, baseData, bullData) {
+    if (growthChart) growthChart.destroy();
+    const ctx = chartCanvas.getContext('2d');
+    growthChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: baseData.map(d => d.year),
+        datasets: [
+          { label: `Bear (${bearRateEl.value}%)`, data: bearData.map(d => d.balance),
+            borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.1 },
+          { label: `Base (${baseRateEl.value}%)`, data: baseData.map(d => d.balance),
+            borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.1 },
+          { label: `Bull (${bullRateEl.value}%)`, data: bullData.map(d => d.balance),
+            borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.1 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        // This new block enables the multi-series tooltip
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        scales: {
+          x: { title: { display: true, text: 'Year' } },
+          y: { title: { display: true, text: 'Portfolio Value' },
+               ticks: { callback: v => '$' + v.toLocaleString() } }
+        },
+        plugins: { tooltip: { callbacks: {
+          label: (ctx) => {
+            let label = ctx.dataset.label ? ctx.dataset.label + ': ' : '';
+            if (ctx.parsed.y != null) {
+              label += new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(ctx.parsed.y);
+            }
+            return label;
+          }}}}
+      }
+    });
+  }
+
+  function updateSummary(bearFinal, baseFinal, bullFinal, years) {
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    summaryTextEl.innerHTML = `
+      <p class="text-lg mb-4">After <strong>${years} years</strong>, your projected portfolio values are:</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-4 bg-red-50 rounded-lg">
+          <h4 class="font-bold text-lg text-red-800">Bear Case (${bearRateEl.value}%)</h4>
+          <p class="text-2xl font-extrabold text-red-600 my-2">${f.format(bearFinal.balance)}</p>
+          <ul class="text-sm space-y-1 text-gray-600">
+            <li><strong>Contributions:</strong> ${f.format(bearFinal.totalContributions)}</li>
+            <li><strong>Returns:</strong> ${f.format(bearFinal.totalReturns)}</li>
+          </ul>
+        </div>
+        <div class="p-4 bg-blue-50 rounded-lg">
+          <h4 class="font-bold text-lg text-blue-800">Base Case (${baseRateEl.value}%)</h4>
+          <p class="text-2xl font-extrabold text-blue-600 my-2">${f.format(baseFinal.balance)}</p>
+          <ul class="text-sm space-y-1 text-gray-600">
+            <li><strong>Contributions:</strong> ${f.format(baseFinal.totalContributions)}</li>
+            <li><strong>Returns:</strong> ${f.format(baseFinal.totalReturns)}</li>
+          </ul>
+        </div>
+        <div class="p-4 bg-green-50 rounded-lg">
+          <h4 class="font-bold text-lg text-green-800">Bull Case (${bullRateEl.value}%)</h4>
+          <p class="text-2xl font-extrabold text-green-600 my-2">${f.format(bullFinal.balance)}</p>
+          <ul class="text-sm space-y-1 text-gray-600">
+            <li><strong>Contributions:</strong> ${f.format(bullFinal.totalContributions)}</li>
+            <li><strong>Returns:</strong> ${f.format(bullFinal.totalReturns)}</li>
+          </ul>
+        </div>
+      </div>`;
+  }
+
+  function handleCalculation() {
+    const initial = parseFloat(initialInvestmentEl.value);
+    const contrib = parseFloat(contributionEl.value);
+    const freq = parseInt(payFrequencyEl.value);
+    const yrs = parseInt(yearsEl.value);
+    const rateBear = parseFloat(bearRateEl.value) / 100;
+    const rateBase = parseFloat(baseRateEl.value) / 100;
+    const rateBull = parseFloat(bullRateEl.value) / 100;
+
+    const bear = calculateGrowth(initial, yrs, rateBear, freq, contrib);
+    const base = calculateGrowth(initial, yrs, rateBase, freq, contrib);
+    const bull = calculateGrowth(initial, yrs, rateBull, freq, contrib);
+
+    renderChart(bear.timeline, base.timeline, bull.timeline);
+    updateSummary(bear.final, base.final, bull.final, yrs);
+  }
+
+  document.getElementById('calculate').addEventListener('click', handleCalculation);
+  yearsEl.addEventListener('input', (e) => yearsLabel.textContent = e.target.value);
+  bearRateEl.addEventListener('input', (e) => bearRateLabel.textContent = (+e.target.value).toFixed(1));
+  baseRateEl.addEventListener('input', (e) => baseRateLabel.textContent = (+e.target.value).toFixed(1));
+  bullRateEl.addEventListener('input', (e) => bullRateLabel.textContent = (+e.target.value).toFixed(1));
+  document.addEventListener('DOMContentLoaded', handleCalculation);
+</script>
+</body>
+</html>
